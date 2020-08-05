@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Title</title>
+</head>
+
+<body>
+  <div id="root">
+    <div>
+      <p>{{name.firstName}}--{{name.lastName}}</p>
+    </div>
+    <p>{{name.firstName}}</p>
+    <p>{{name.lastName}}</p>
+  </div>
+
+  <script>
+    let rKuohao = /\{\{(.*?)\}\}/g
+
+    // 解析模板：将 template 中的 {{}} 替换为 data 中的值
+    function compile(template, data) {
+      let childNodes = template.childNodes
+
+      for (let i = 0; i < childNodes.length; i++) {
+        let type = childNodes[i].nodeType
+
+        if (type === 3) {
+          let text = childNodes[i].nodeValue
+
+          text = text.replace(rKuohao, function (_, g) {
+            let value = getValueByPaths(data, g)
+            return value
+          })
+
+          childNodes[i].nodeValue = text
+        } else if (type === 1) {
+          compile(childNodes[i], data)
+        }
+      }
+    }
+
+    // 获取 template 中的 {{}} 内深度的属性
+    function getValueByPaths(obj, paths) {
+      let pathList = paths.split(".")
+
+      let path
+      let res = obj
+
+      while (path = pathList.shift()) {
+        res = res[path]
+      }
+
+      return res
+    }
+
+    // WVue 函数
+    function WVue(option) {
+      this._data = option.data
+      this._el = option.el
+
+      this._templateNode = document.querySelector(this._el)
+      this._parent = this._templateNode.parentNode
+
+      this.render()
+    }
+
+    // WVue 的主函数
+    WVue.prototype.render = function () {
+      this.compiler()
+    }
+
+    // WVue 编译根据 el 属性拿到的模板
+    WVue.prototype.compiler = function () {
+      let realHTMLDom = this._templateNode.cloneNode(true)
+      console.log(this._templateNode)
+      compile(realHTMLDom, this._data)
+      console.log(realHTMLDom)
+
+      this.updata(realHTMLDom)
+    }
+
+    // WVue 将解析之后的模板替换到 html 中渲染
+    WVue.prototype.updata = function (real) {
+      this._parent.replaceChild(real, document.querySelector("#root"))
+    }
+
+    // 使用函数
+    let app = new WVue({
+      el: "#root",
+      data: {
+        name: {
+          firstName: "赛利亚",
+          lastName: "今天天气怎么样"
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>

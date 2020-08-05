@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Page Title</title>
+</head>
+
+<body>
+	<div id="root">
+		<div>
+			<p>{{name}}--{{message}}</p>
+		</div>
+		<p>{{name}}</p>
+		<p>{{message}}</p>
+	</div>
+
+	<script>
+		let temNode = document.querySelector("#root")
+		let data = {
+			name: "赛利亚",
+			message: "今天天气怎么样"
+		}
+
+		let rKuohao = /\{\{(.*?)\}\}/g
+
+
+		
+		function compile(template, data) {
+			let childNodes = template.childNodes
+
+			for (let i = 0; i < childNodes.length; i++) {
+				let type = childNodes[i].nodeType
+				
+				if (type === 3) {
+					let text = childNodes[i].nodeValue
+
+					text = text.replace(rKuohao, function (_, g) {
+						let value = data[g]
+						return value
+					})
+
+					childNodes[i].nodeValue = text
+				}
+				else if (type === 1) {
+					compile(childNodes[i], data)
+				}
+			}
+		}
+		
+		console.log(temNode)
+		let generateNode = temNode.cloneNode(true)
+		compile(generateNode, data)
+		console.log(generateNode)
+
+		root.parentNode.replaceChild(generateNode, root)
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Title</title>
+</head>
+<body>
+  <div>
+    <p>{{name.firstName}}--{{name.lastName}}</p>
+  </div>
+  
+  <script>
+    let data = {
+      name: {
+        firstName: "赛利亚",
+        lastName: "你好啊"
+      }
+    }
+
+    // function getPathByValue (obj, paths) {
+    //   let pathsArr = paths.split(".")
+
+    //   let res = obj
+    //   let prop
+
+    //   while (prop = pathsArr.shift()) {
+    //     res = res[prop]        
+    //   }
+
+    //   return res
+    // }
+
+    console.log(getPathByValue(data, "name.firstName"))
+  </script>
+</body>
+</html>

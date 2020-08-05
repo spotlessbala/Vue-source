@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Page Title</title>
+</head>
+
+<body>
+	<div id="root">
+		<div>
+			<div>
+				<p>{{name}}--{{message}}</p>
+			</div>
+		</div>
+		<p>{{name}}</p>
+		<p>{{message}}</p>
+	</div>
+
+	<script>
+		/**
+		 * 1. 拿到模板
+		 * 2. 拿到数据
+		 * 3. 将模板与数据结合 得到 DOM 元素
+		 * 4. 将元素渲染到页面当中
+		 */
+
+		// 1. 拿到模板
+		let temNode = document.querySelector("#root")
+
+
+		// 2. 拿到数据
+		let data = {
+			name: "赛利亚",
+			message: "今天天气怎么样"
+		}
+
+		/**
+		 * 3. 将模板与数据结合得到 DOM 元素
+		 * 通常的做法是使用递归
+		 * 		
+		 * 在此处这个案例当中 template 是 DOM 元素
+		 * 而在 Vue 的案例当中 源码是 DOM -> 字符串模板 -> VNode -> 真正的 DOM
+		 */
+		let rKuohao = /\{\{(.+?)\}\}/g
+		function compiler(template, data) {
+			let childNodes = template.childNodes
+
+			for (let i = 0; i < childNodes.length; i++) {				
+				let type = childNodes[i].nodeType
+				
+				if (type === 3) {
+					// 3 代表文本 判断里面是否含有{{}}差值
+					let text = childNodes[i].nodeValue
+
+					text = text.replace(rKuohao, function( _, g) {
+						let key = g.trim()
+						let value = data[key]
+
+						// 将 {{xxxx}} 用这个值替换
+						return value
+					})
+
+					childNodes[i].nodeValue = text
+				}
+				else if (type === 1) {
+					// 1 代表元素 考虑元素有没有子元素 是否需要将其子元素进行判断 是否需要插值
+					compiler(childNodes[i], data)
+				}
+			}
+		}
+	
+		let generateNode = temNode. cloneNode(true );
+		console.log(temNode)
+		compiler(generateNode, data)
+		console.log(generateNode)
+		temNode.parentNode.replaceChild(generateNode, temNode)
+	</script>
+</body>
+
+</html>
