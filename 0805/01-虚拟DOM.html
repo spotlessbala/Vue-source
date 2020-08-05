@@ -7,21 +7,18 @@
 </head>
 <body>
   <div id="root" class="root wxh">
-    你好
-    <div>div1</div>
-    <div>div2</div>
-    <div>div3</div>
     <ul>
-      <li>li1</li>
-      <li>li2</li>
-      <li>li3</li>
+      <li>赛利亚你好啊</li>
     </ul>
+    <div>今天天气怎么样</div>
+    <div>我觉得还是蛮好的</div>
+    <div>你喜欢下雨天还是晴天</div>
   </div>
 
   <script>
     class VNode {
       constructor(tag, data, value, type) { 
-        this.tag = tag && tag.toLowerCase()
+        this.tag = tag
         this.data = data
         this.value = value
         this.type = type
@@ -33,36 +30,35 @@
       }
     }
 
-    function getVNode(node) {
+    function getVNode (node) {
       let _vnode = null
-      // debugger
       let nodeType = node.nodeType
+
       if (nodeType === 1) {
-        let nodeTag = node.nodeName   
+        // 开始是必然进入这个判断的 因为我们传入的就是个元素节点
+
+        let nodeTag = node.nodeName
+
         let nodeData = {}
+
         let nodeAttrs = node.attributes
         for (let i = 0; i < nodeAttrs.length; i++) {
-          nodeData[nodeAttrs[i].nodeName] = nodeAttrs[i].nodeValue
+          nodeData[nodeAttrs[i].nodeName] = nodeAttrs[i].nodeValue 
         }
-        _vnode = new VNode(nodeTag, nodeData, undefined, 1)
 
-        let nodeChildrens = node.childNodes
-        for (let i = 0; i < nodeChildrens.length; i++) {
-          _vnode.appendChild(getVNode(nodeChildrens[i]))
+        _vnode = new VNode(nodeTag, nodeData, undefined, 3)
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+          _vnode.appendChild(getVNode(node.childNodes[i]))
         }
-      }
-      else if (nodeType === 3) {
-        console.log(node.nodeValue)
-        let nodeValue = node.nodeValue
-        _vnode = new VNode(undefined, undefined, nodeValue, 3)
+      } else if (nodeType === 3) {
+        _vnode = new VNode(undefined, undefined, node.nodeValue, 1)
       }
 
       return _vnode
     }
 
-    let vnode = getVNode(root)
-    console.log(vnode)
-    // console.log(root.childNodes);
+    console.log(getVNode(root)); 
   </script>
 </body>
 </html>
