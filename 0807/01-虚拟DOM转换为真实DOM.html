@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>虚拟 DOM</title>
+</head>
+<body>
+  <div id="root" class="root wxh">
+    <ul>
+      <li>赛利亚你好啊</li>
+    </ul>
+    <div>今天天气怎么样</div>
+    <div>我觉得还是蛮好的</div>
+    <div>你喜欢下雨天还是晴天</div>
+  </div>
+
+  <script>
+    class VNode {
+      constructor(tag, data, value, type) { 
+        this.tag = tag
+        this.data = data
+        this.value = value
+        this.type = type
+        this.children = []
+      }
+
+      appendChild(vnode) {
+        this.children.push(vnode)
+      }
+    }
+
+    function getVNode (node) {
+      let _vnode = null
+      let nodeType = node.nodeType
+
+      if (nodeType === 1) {
+        // 开始是必然进入这个判断的 因为我们传入的就是个元素节点
+
+        let nodeTag = node.nodeName
+
+        let nodeData = {}
+
+        let nodeAttrs = node.attributes
+        for (let i = 0; i < nodeAttrs.length; i++) {
+          nodeData[nodeAttrs[i].nodeName] = nodeAttrs[i].nodeValue 
+        }
+
+        _vnode = new VNode(nodeTag, nodeData, undefined, 3)
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+          _vnode.appendChild(getVNode(node.childNodes[i]))
+        }
+      } else if (nodeType === 3) {
+        _vnode = new VNode(undefined, undefined, node.nodeValue, 1)
+      }
+
+      return _vnode
+    }
+
+    let _vnode = getVNode(root)
+
+    console.log(_vnode)
+
+    // 虚拟DOM转换为真实DOM
+
+
+
+    function parseVNode (vnode) {
+      let type = vnode.type
+      let node = null
+      // debugger
+      if (type === 3) {
+        // 创建元素
+        node = document.createElement(vnode.tag)
+
+        // 添加元素属性
+        let data = vnode.data
+        Object.keys(data).forEach(key => {
+          attrName = key
+          attrValue = data[key]
+
+          node.setAttribute(key, data[key])
+        })
+
+        // 添加元素子元素
+        vnode.children.forEach(subvnode => {
+          node.appendChild(parseVNode(subvnode))
+        })
+      } else if (type === 1) {
+        node = document.createTextNode(vnode.value)
+      }
+
+      return node
+    }
+
+    console.log(parseVNode(_vnode))
+  </script>
+</body>
+</html>
