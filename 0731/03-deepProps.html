@@ -18,18 +18,18 @@
       }
     }
 
-    // function getPathByValue (obj, paths) {
-    //   let pathsArr = paths.split(".")
+    function getPathByValue (obj, paths) {
+      let pathsArr = paths.split(".")
 
-    //   let res = obj
-    //   let prop
+      let res = obj
+      let prop
 
-    //   while (prop = pathsArr.shift()) {
-    //     res = res[prop]        
-    //   }
+      while (prop = pathsArr.shift()) {
+        res = res[prop]        
+      }
 
-    //   return res
-    // }
+      return res
+    }
 
     console.log(getPathByValue(data, "name.firstName"))
   </script>

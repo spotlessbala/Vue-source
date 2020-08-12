@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WVue</title>
+</head>
+
+<body>
+  <div id="root">
+		<p>{{name}}</p>
+		<p>{{message}}</p>
+  </div>
+  
+  <script>
+    // 虚拟DOM 构造函数
+    class VNode {
+      constructor(tag, data, value, type) {
+        this.tag = tag
+        this.data = data
+        this.value = value
+        this.type = type
+        this.children = []
+      }
+
+      appendChild(vnode) {
+        this.children.push(vnode)
+      }
+    }
+
+    // 根据传入的路径获取值    
+    function getPathByValue(obj, paths) {
+      let pathsArr = paths.split(".")
+
+      let res = obj
+      let prop
+
+      while (prop = pathsArr.shift()) {
+        res = res[prop]
+      }
+
+      return res
+    }
+
+    // 根据传入的 node 获取 虚拟DOM
+    function getVNode(node) {
+      let _vnode = null
+      let nodeType = node.nodeType
+
+      if (nodeType === 1) {
+        let nodeTag = node.nodeName
+
+        let nodeData = {}
+
+        let nodeAttrs = node.attributes
+        for (let i = 0; i < nodeAttrs.length; i++) {
+          nodeData[nodeAttrs[i].nodeName] = nodeAttrs[i].nodeValue
+        }
+
+        _vnode = new VNode(nodeTag, nodeData, undefined, 3)
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+          _vnode.appendChild(getVNode(node.childNodes[i]))
+        }
+      } else if (nodeType === 3) {
+        _vnode = new VNode(undefined, undefined, node.nodeValue, 1)
+      }
+
+      return _vnode
+    }
+    
+    // 解析模板 将 template 中的 {{}} 替换为 data 中的值
+    let rKuohao = /\{\{(.*?)\}\}/g
+    function compile(template, data) {
+      let childNodes = template.children
+
+      for (let i = 0; i < childNodes.length; i++) {
+        let type = childNodes[i].nodeType
+
+        if (type === 3) {
+          let text = childNodes[i].nodeValue
+
+          text = text.replace(rKuohao, function (_, g) {
+            let value = getPathByValue(data, g)
+            return value
+          })
+
+          childNodes[i].nodeValue = text
+        } else if (type === 1) {
+          compile(childNodes[i], data)
+        }
+      }
+
+      return template
+    }
+
+    function WVue(option) {
+      this._data = option.data
+      this.$el = this._el = document.querySelector(option.el)
+
+      this.mount()
+    }
+
+    WVue.prototype.mount = function () {      
+      this.render = this.creatRenderFn()
+      this.mountCompontne()
+    }
+
+    WVue.prototype.mountCompontne = function () {
+      let mount = () => {
+        this.updata(this.render())
+      }
+      mount.call(this)
+    }
+
+    // 这里生成 render 函数 目的是缓存抽象语法树 此处我们模拟为 缓存 虚拟 DOM。
+    WVue.prototype.creatRenderFn = function () {
+      let _ast = getVNode(this._el)
+      return function () {
+        let _tem = compile(_ast, this._data)
+        debugger
+        return _tem
+      }
+    }
+
+    // 此处将 虚拟DOM 渲染到页面中 使用大家常说的 diff 算法
+    WVue.prototype.updata = function () {
+
+    }
+
+		let app = new WVue({
+			el: "#root",
+			data: {
+				name: "赛利亚",
+				message: "你好啊"
+			}
+		})
+
+  </script>
+</body>
+
+</html>
