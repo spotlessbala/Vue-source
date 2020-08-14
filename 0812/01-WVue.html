@@ -72,27 +72,17 @@
     
     // 解析模板 将 template 中的 {{}} 替换为 data 中的值
     let rKuohao = /\{\{(.*?)\}\}/g
-    function compile(template, data) {
-      let childNodes = template.children
+    function render(template, data) {az123
+      let _tag = template.tag
+      let _data = template.data
+      let _value = template.value
+      let _type = template.type
+      let _children = template.children
 
-      for (let i = 0; i < childNodes.length; i++) {
-        let type = childNodes[i].nodeType
-
-        if (type === 3) {
-          let text = childNodes[i].nodeValue
-
-          text = text.replace(rKuohao, function (_, g) {
-            let value = getPathByValue(data, g)
-            return value
-          })
-
-          childNodes[i].nodeValue = text
-        } else if (type === 1) {
-          compile(childNodes[i], data)
-        }
+      if (_type === 1) {
+        
       }
 
-      return template
     }
 
     function WVue(option) {
@@ -117,10 +107,10 @@
     // 这里生成 render 函数 目的是缓存抽象语法树 此处我们模拟为 缓存 虚拟 DOM。
     WVue.prototype.creatRenderFn = function () {
       let _ast = getVNode(this._el)
+      debugger
       return function () {
-        let _tem = compile(_ast, this._data)
+        compile(_ast, this._data)
         debugger
-        return _tem
       }
     }
 

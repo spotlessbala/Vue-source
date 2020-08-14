@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>page title</title>
+</head>
+<body>
+  <script>
+    let object = {
+      name: "王鑫辉",
+      age: 25,
+      gender: "男",
+      course: [
+        {name: "语文"},
+        {name: "数学"},
+        {name: "英文"}
+      ]
+    }
+
+    let ARRAY_METHOD = [
+      "push",
+      "pop",
+      "shift",
+      "unshift",
+      "slice",
+    ]
+
+    function fun () {
+      console.log("执行了函数")
+    }
+
+    let _temporary = fun
+
+    fun = function () {
+      console.log("重写了一部分函数")
+      _temporary()
+    }
+
+    fun()
+
+    let arr = []
+    let arr_method = Object.create(Array.prototype)
+    console.log(arr_method)
+
+    ARRAY_METHOD.forEach(method => {
+      arr_method[method] = function () {
+        console.log(`调用的是被拦截之后的 ${method} 方法`)
+        let res = Array.prototype[method].apply(this, arguments)
+        return res
+      }
+    })
+
+    arr.__proto__ = arr_method
+
+
+
+
+
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>04-改造响应式化中遇到的数组</title>
+</head>
+<body>
+  <script>
+    let object = {
+      name: "王鑫辉",
+      age: 25,
+      gender: "男",
+      course: [
+        {name: "语文"},
+        {name: "数学"},
+        {name: "英文"}
+      ]
+    }
+
+    let ARRAY_METHOD = [
+      "push",
+      "pop",
+      "shift",
+      "unshift",
+      "slice",
+    ]
+    let arr_method = Object.create(Array.prototype)
+    ARRAY_METHOD.forEach(method => {
+      arr_method[method] = function () {
+        for (let i = 0; i < arguments.length; i++) {
+          let argument = arguments[i];
+          reactiveOfObject(argument)
+        }
+        let res = Array.prototype[method].apply(this, arguments)
+        return res
+      }
+    })
+
+    function reactive (object, key, value, enumerable) {
+      if (typeof value === 'object' && value != null && !Array.isArray(value)) {
+        reactiveOfObject(value)
+      }
+      Object.defineProperty(object, key, {
+        configurable: true, 
+        enumerable: !!enumerable,
+        set (newValue) {
+          reactiveOfObject(newValue)
+          console.log(`设置值为 ${newValue}`)
+          value = newValue
+        },
+        get () {
+          console.log(`读取 ${key} 的值为 ${value}`)
+          return value
+        }
+      })
+    }
+    function reactiveOfObject (object) {
+      let keys = Object.keys(object)
+
+      for (let i = 0; i < keys.length; i++) {
+        let key = keys[i];
+        let value = object[key]
+
+        if (Array.isArray(value)) {
+          value.__proto__ = arr_method
+          for (let j = 0; j < value.length; j++) {
+            reactiveOfObject(value[j])    
+          }
+        } else {
+          reactive(object, key, value, true)
+        }
+      }
+    }
+  
+    reactiveOfObject(object)
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    let data = {
+      name: {
+        _a: "赛利亚",
+        _b: "王鑫辉"
+      },
+      course: [
+        {name: "语文"},
+        {name: "数学"},
+        {name: "英语"},
+      ],
+      age: 25,
+      gender: "男"
+    }
+
+    // 传入对象以及属性 将其响应式化
+    function reactive (object, key, value, enumerable) {
+      if (typeof value === 'object' && value != null && !Array.isArray(value)) {
+        reactiveOfObject(value)
+      }
+      Object.defineProperty(object, key, {
+        configurable: true,
+        enumerable: !!enumerable,
+        set(newValue) {
+          console.log(`设置值为 ${newValue}`)
+          value = newValue
+        },
+        get() {
+          console.log(`读取 ${key} 的值为 ${value}`)
+          return value
+        }
+      })
+    }
+
+    function reactiveOfObject (object) {
+      let keys = Object.keys(object)
+
+      for (let i = 0; i < keys.length; i++) {
+        let key = keys[i]; // 对象的属性
+        let value = object[key]
+
+        if (Array.isArray(value)) {
+          for (let j = 0; j < value.length; j++) {
+            reactiveOfObject(value[j])
+          }
+        } else  {
+          reactive(object, key, value, true)
+        }
+      }
+    }
+
+    reactiveOfObject(data)
+    console.log(data)
+  </script>
+</body>
+</html>

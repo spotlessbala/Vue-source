@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    let data = {
+      name: {
+        _a: "王",
+        _b: "鑫辉"
+      },
+      age: 25,
+      gender: "男",
+      course: [
+        {
+          name: "语文"
+        },
+        { 
+          name: "数学"
+        },
+        {
+          name: "英语"
+        },
+      ]
+    }
+
+    // 利用闭包缓存 value 值，设置值为响应式。
+    function defintReactive(target, key, value, enumerable) {
+      if (typeof value === 'object' && value != null && !Array.isArray(value)) {
+        retivfy(value)
+      } else {
+        Object.defineProperty(target, key, {
+          configurable: true,
+          enumerable: !!enumerable,
+          set(newValue) {
+            console.log(`设置值为 ${newValue}`)
+            value = newValue
+          },
+          get() {
+            console.log(`读取 ${key} 的值为 ${value}`)
+            return value
+          }
+        })
+      }
+    }
+
+    // 将 object 响应式化
+    function retivfy(object) {
+      let keys = Object.keys(object)
+      for (let i = 0; i < keys.length; i++) {
+        let key = keys[i]; //属性名
+        let value = object[key]
+
+        // 1. 是否引用类型: 需要递归
+        // 2. 是否是数组: 需要循环数组 将数组里面的元素进行响应式化
+        if (Array.isArray(value)) {
+          // 数组
+          for (let j = 0; j < value.length; j++) {
+            retivfy(value[j])
+          }
+
+        } else {
+          // 对象或者值类型
+          defintReactive(object, key, value, true)
+        }
+      }
+    }
+    
+  </script>
+</body>
+
+</html>

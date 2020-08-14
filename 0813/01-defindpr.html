@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 初步接触 defineProperty
+    let w = {
+      name: "王鑫辉",
+      age: 25,
+      gender: "男"
+    }
+
+
+    // 函数缓存值为闭包
+    function defintReactive(target, key, value, enumerable) {
+      Object.defineProperty(target, key, {
+        configurable: true,
+        enumerable: !!enumerable,
+        set (newValue) {
+          console.log(`设置值为 ${newValue}`)
+          value = newValue
+        },
+        get () {  
+          console.log(`读取 ${key} 的值为 ${value}`)
+          return value
+        }
+      })
+    }
+
+    // 此时我们只遍历了一层而已
+    let keys = Object.keys(w)
+    console.log(keys)    
+    for (let i = 0; i < keys.length; i++) {
+      defintReactive(w, keys[i], w[keys[i]], true)
+    }
+
+    console.log(w)
+
+    // ？？？ 尝试嵌套遍历深层次
+  </script>
+</body>
+
+</html>
