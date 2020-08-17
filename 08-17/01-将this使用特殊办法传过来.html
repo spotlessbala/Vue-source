@@ -36,6 +36,8 @@
         reactiveOfObject(value)
       }
 
+      let _that = this
+
       Object.defineProperty(object, key, {
         configurable: true, 
         enumerable: !!enumerable,
@@ -43,6 +45,7 @@
           reactive(object, key, newValue, true)
           console.log(`设置值为 ${newValue}`)
           value = newValue
+          _that.mountCompontent()
         },
         get () {
           console.log(`读取 ${key} 的值为 ${value}`)
@@ -50,7 +53,7 @@
         }
       })
     }
-    function reactiveOfObject (object) {
+    function reactiveOfObject (object, vm) {
       let keys = Object.keys(object)
 
       for (let i = 0; i < keys.length; i++) {
@@ -60,10 +63,10 @@
         if (Array.isArray(value)) {
           value.__proto__ = arr_method
           for (let j = 0; j < value.length; j++) {
-            reactiveOfObject(value[j])    
+            reactiveOfObject(value[j], vm)    
           }
         } else {
-          reactive(object, key, value, true)
+          reactive.call(vm, object, key, value, true, vm)
         }
       }
     }
@@ -127,23 +130,29 @@
     // 解析模板 将 template 中的 {{}} 替换为 data 中的值
     let rKuohao = /\{\{(.*?)\}\}/g
     function compile(template, data) {
-      let _tag = template.tag
-      let _data = template.data
-      let _value = template.value
-      let _type = template.type
-      let _children = template.children
+      let _type = template.type;
+      let _data = template.data;
+      let _value = template.value;
+      let _tag = template.tag;
+      let _children = template.children;
 
-      if (_type === 1) {
-        for (let i = 0; i < _children.length; i++) {
-          let childTem = _children[i];
-          compile(childTem, data)
-        }
-      } else if (_type === 3) {
-        _value = _value.replace(rKuohao, function (_, g) {
-          return getValueByPath(data, g)
-        })
-        template.value = _value
+
+      let _vnode = null;
+
+      if ( _type === 3 ) { // 文本节点 
+        // 对文本处理
+        _value = _value.replace( rKuohao, function ( _, g ) {
+          return getValueByPath( data, g.trim() ); // 除了 get 读取器
+        } );
+
+        _vnode = new VNode( _tag, _data, _value, _type )
+
+      } else if ( _type === 1 ) { // 元素节点
+        _vnode = new VNode( _tag, _data, _value, _type );
+        _children.forEach( _subvnode => _vnode.appendChild( compile( _subvnode, data ) ) );
       }
+
+      return _vnode;
     }
 
     // 虚拟DOM转换为真实DOM
@@ -177,39 +186,42 @@
     
     function WVue(option) {
       this._data = option.data
-      this.$el = this._el = document.querySelector(option.el)
+      let el  = document.querySelector(option.el)
+      this._template = el;
       this._patent = document.querySelector(option.el).parentNode
 
-      reactiveOfObject(this._data)
+      reactiveOfObject(this._data, this)
 
       this.mount()
     }
 
     WVue.prototype.mount = function () {
       this.render = this.creatRenderFn()
-      this.mountCompontne()
+      this.mountCompontent()
     }
 
-    WVue.prototype.mountCompontne = function () {
+    WVue.prototype.mountCompontent = function () {
       let mount = () => {
+        let _render = this.render()
+        debugger
         this.updata(this.render())
       }
       mount.call(this)
     }
 
     // 这里生成 render 函数 目的是缓存抽象语法树 此处我们模拟为 缓存 虚拟 DOM。
-    WVue.prototype.creatRenderFn = function () {
-      let _ast = getVNode(this._el)
-      return function () {
-        compile(_ast, this._data)
-        let node = parseVNode(_ast)
-        return node
+    WVue.prototype.creatRenderFn = function () {    
+      let _ast = getVNode(this._template)  
+      return function render () {
+        let _tep = compile(_ast, this._data)
+        return _tep
       }
     }
 
-    // 此处将 虚拟DOM 渲染到页面中 使用大家常说的 diff 算法
-    WVue.prototype.updata = function (node) { 
-      this._patent.replaceChild(node, document.querySelector("#root"))
+    // 此处将 虚拟DOM 渲染到页面中 使用 diff 算法
+    WVue.prototype.updata = function (vnode) { 
+      let realDOM = parseVNode( vnode );
+      this._patent.replaceChild(realDOM, document.querySelector("#root"))
     }
 
 		let app = new WVue({
