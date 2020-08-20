@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>04-改造响应式化中遇到的数组</title>
+  <title>目前响应化不支持的操作 如 push 等</title>
 </head>
 <body>
   <div id="root">
@@ -24,6 +24,7 @@
     let arr_method = Object.create(Array.prototype)
     ARRAY_METHOD.forEach(method => {
       arr_method[method] = function () {
+        console.log(`调用了拦截之后 ${method} 方法。`);
         for (let i = 0; i < arguments.length; i++) {
           let argument = arguments[i];
           reactiveOfObject(argument)
@@ -33,7 +34,8 @@
       }
     })
 
-    function reactive (object, key, value, enumerable) {
+    // 将对象的值设置为响应式化
+    function defineReactive (object, key, value, enumerable) {
       if (typeof value === 'object' && value != null && !Array.isArray(value)) {
         reactiveOfObject(value)
       }
@@ -43,18 +45,21 @@
       Object.defineProperty(object, key, {
         configurable: true, 
         enumerable: !!enumerable,
+        get () {
+          console.log(`读取到 ${key} 的值： ${value}`)
+          return value
+        },
         set (newValue) {
-          reactive(object, key, newValue, true)
-          console.log(`设置值为 ${newValue}`)
+          console.log(`设置 ${object} 值为 ${newValue}`)
+
+          defineReactive(object, key, newValue, true)          
           value = newValue
           _that.mountCompontent()
-        },
-        get () {
-          console.log(`读取 ${key} 的值为 ${value}`)
-          return value
         }
       })
     }
+    
+    // 将对象响应式化
     function reactiveOfObject (object, vm) {
       let keys = Object.keys(object)
 
@@ -68,7 +73,7 @@
             reactiveOfObject(value[j], vm)    
           }
         } else {
-          reactive.call(vm, object, key, value, true, vm)
+          defineReactive.call(vm, object, key, value, true, vm)
         }
       }
     }
@@ -229,7 +234,11 @@
 			el: "#root",
 			data: {
 				name: "赛利亚",
-				message: "你好啊"
+        message: "你好啊",
+        datas: [
+          {name: "语文"},
+          {name: "数学"},          
+        ]
 			}
 		})
   </script>
