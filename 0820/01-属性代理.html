@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>目前响应化不支持的操作 如 push 等</title>
+</head>
+<body>
+  <div id="root">
+		<p>{{name}}</p>
+		<p>{{message}}</p>
+  </div>
+
+  <script>
+    let ARRAY_METHOD = [
+      "push",
+      "pop",
+      "shift",
+      "unshift",
+      "reverse",
+      "sort",
+      "solice",
+    ]
+    let arr_method = Object.create(Array.prototype)
+    ARRAY_METHOD.forEach(method => {
+      arr_method[method] = function () {
+        console.log(`调用了拦截之后 ${method} 方法。`);
+        for (let i = 0; i < arguments.length; i++) {
+          let argument = arguments[i];
+          reactivity(argument)
+        }
+        let res = Array.prototype[method].apply(this, arguments)
+        return res
+      }
+    })
+
+    // 将对象的值设置为响应式化
+    function defineReactive (object, key, value, enumerable) {
+      if (typeof value === 'object' && value != null && !Array.isArray(value)) {
+        reactivity(value)
+      }
+
+      let _that = this
+
+      Object.defineProperty(object, key, {
+        configurable: true, 
+        enumerable: !!enumerable,
+        get () {
+          console.log(`读取到 ${key} 的值： ${value}`)
+          return value
+        },
+        set (newValue) {
+          console.log(`设置 ${object} 值为 ${newValue}`)
+
+          newValue = reactivity(newValue)          
+          value = newValue
+          _that.mountCompontent()
+        }
+      })
+    }
+    
+    // 将对象响应式化
+    function reactivity (object, vm) {
+      let keys = Object.keys(object)
+
+      for (let i = 0; i < keys.length; i++) {
+        let key = keys[i];
+        let value = object[key]
+
+        if (Array.isArray(value)) {
+          value.__proto__ = arr_method
+          for (let j = 0; j < value.length; j++) {
+            reactivity(value[j], vm)    
+          }
+        } else {
+          defineReactive.call(vm, object, key, value, true, vm)
+        }
+      }
+    }
+    
+    // 虚拟DOM 构造函数
+    class VNode {
+      constructor(tag, data, value, type) {
+        this.tag = tag
+        this.data = data
+        this.value = value
+        this.type = type
+        this.children = []
+      }
+
+      appendChild(vnode) {
+        this.children.push(vnode)
+      }
+    }
+
+    // 根据传入的路径获取值    
+    function getValueByPath(obj, paths) {
+      let pathsArr = paths.split(".")
+
+      let res = obj
+      let prop
+
+      while (prop = pathsArr.shift()) {
+        res = res[prop]
+      }
+
+      return res
+    }
+
+    // 根据传入的 node 获取 虚拟DOM
+    function getVNode(node) {
+      let _vnode = null
+      let nodeType = node.nodeType
+
+      if (nodeType === 1) {
+        let nodeTag = node.nodeName
+
+        let nodeData = {}
+
+        let nodeAttrs = node.attributes
+        for (let i = 0; i < nodeAttrs.length; i++) {
+          nodeData[nodeAttrs[i].nodeName] = nodeAttrs[i].nodeValue
+        }
+
+        _vnode = new VNode(nodeTag, nodeData, undefined, 1)
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+          _vnode.appendChild(getVNode(node.childNodes[i]))
+        }
+      } else if (nodeType === 3) {
+        _vnode = new VNode(undefined, undefined, node.nodeValue, 3)
+      }
+
+      return _vnode
+    }
+    
+    // 解析模板 将 template 中的 {{}} 替换为 data 中的值
+    let rKuohao = /\{\{(.*?)\}\}/g
+    function compile(template, data) {
+      let _type = template.type;
+      let _data = template.data;
+      let _value = template.value;
+      let _tag = template.tag;
+      let _children = template.children;
+
+
+      let _vnode = null;
+
+      if ( _type === 3 ) { // 文本节点 
+        // 对文本处理
+        _value = _value.replace( rKuohao, function ( _, g ) {
+          return getValueByPath( data, g.trim() ); // 除了 get 读取器
+        } );
+
+        _vnode = new VNode( _tag, _data, _value, _type )
+
+      } else if ( _type === 1 ) { // 元素节点
+        _vnode = new VNode( _tag, _data, _value, _type );
+        _children.forEach( _subvnode => _vnode.appendChild( compile( _subvnode, data ) ) );
+      }
+
+      return _vnode;
+    }
+
+    // 虚拟DOM转换为真实DOM
+    function parseVNode (vnode) {
+      let type = vnode.type
+      let node = null
+      // debugger
+      if (type === 1) {
+        // 创建元素
+        node = document.createElement(vnode.tag)
+
+        // 添加元素属性
+        let data = vnode.data
+        Object.keys(data).forEach(key => {
+          attrName = key
+          attrValue = data[key]
+
+          node.setAttribute(key, data[key])
+        })
+
+        // 添加元素子元素
+        vnode.children.forEach(subvnode => {
+          node.appendChild(parseVNode(subvnode))
+        })
+      } else if (type === 3) {
+        node = document.createTextNode(vnode.value)
+      }
+
+      return node
+    }
+    
+    function WVue(option) {
+      this._data = option.data
+      let el  = document.querySelector(option.el)
+      this._template = el;
+      this._patent = document.querySelector(option.el).parentNode
+
+      this.initData()
+
+      reactivity(this._data, this)
+
+      this.mount()
+    }
+
+    WVue.prototype.mount = function () {
+      this.render = this.creatRenderFn()
+      this.mountCompontent()
+    }
+
+    WVue.prototype.mountCompontent = function () {
+      let mount = () => {
+        let _render = this.render()
+        this.updata(this.render())
+      }
+      mount.call(this)
+    }
+
+    // 这里生成 render 函数 目的是缓存抽象语法树 此处我们模拟为 缓存 虚拟 DOM。
+    WVue.prototype.creatRenderFn = function () {
+      let _ast = getVNode(this._template)
+      return function render () {
+        let _tep = compile(_ast, this._data)
+        return _tep
+      }
+    }
+
+    // 此处将 虚拟DOM 渲染到页面中 使用 diff 算法
+    WVue.prototype.updata = function (vnode) { 
+      let realDOM = parseVNode( vnode );
+      this._patent.replaceChild(realDOM, document.querySelector("#root"))
+    }
+
+    WVue.prototype.initData = function () {
+      let keys = Object.keys(this._data)
+
+      reactivity(this._data, this)
+
+      for (let i = 0; i < keys.length; i++) {
+        proxy(this, '_data', keys[i])
+      }
+    }
+
+    function proxy (target, prop, key) {
+      Object.defineProperty(target, key, {
+          enumerable: true,
+          configurable: true,
+          get () {
+            return target[prop][key]
+          },
+          set (newval) {
+            target[prop][key] = newval
+          }
+        })
+    }
+
+		let app = new WVue({
+			el: "#root",
+			data: {
+				name: "赛利亚",
+        message: "你好啊",
+        datas: [
+          {name: "语文"},
+          {name: "数学"},          
+        ]
+			}
+		})
+  </script>
+</body>
+</html>
