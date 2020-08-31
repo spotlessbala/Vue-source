@@ -34,27 +34,28 @@
     })
 
     function reactive (object, key, value, enumerable) {
+      let _that = this
+
       if (typeof value === 'object' && value != null && !Array.isArray(value)) {
         reactiveOfObject(value)
       }
 
-      let _that = this
-
       Object.defineProperty(object, key, {
         configurable: true, 
         enumerable: !!enumerable,
+        get () {
+          console.log(`读取 ${key} 的值为 ${value}`)
+          return value
+        },
         set (newValue) {
           reactive(object, key, newValue, true)
           console.log(`设置值为 ${newValue}`)
           value = newValue
           _that.mountCompontent()
-        },
-        get () {
-          console.log(`读取 ${key} 的值为 ${value}`)
-          return value
         }
       })
     }
+
     function reactiveOfObject (object, vm) {
       let keys = Object.keys(object)
 

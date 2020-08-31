@@ -25,6 +25,20 @@ function getVNode(node) {
 	return _vnode
 }
 
+// 根据传入的路径获取值    
+function getValueByPath(obj, paths) {
+	let pathsArr = paths.split(".")
+
+	let res = obj
+	let prop
+
+	while (prop = pathsArr.shift()) {
+		res = res[prop]
+	}
+
+	return res
+}
+
 // 解析模板 将 template 中的 {{}} 替换为 data 中的值
 let rKuohao = /\{\{(.*?)\}\}/g
 function compile(template, data) {
@@ -81,3 +95,6 @@ function parseVNode(vnode) {
 
 	return node
 }
+
+
+

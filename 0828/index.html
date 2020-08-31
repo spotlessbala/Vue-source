@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模块化</title>
+</head>
+<body>
+  <div id="root">
+    <ul>
+      <li>{{name}}</li>
+      <li>{{message}}</li>
+    </ul>
+  </div>
+
+  <script src="./src/vnode.js"></script>
+  <script src="./src/compiler.js"></script>
+  <script src="./src/WVue.js"></script>
+  <script src="./src/initrender.js"></script>
+  <script src="./src/initData.js"></script>
+
+  <script>
+		let app = new WVue({
+			el: "#root",
+			data: {
+				name: "赛利亚",
+				message: "你好啊"
+			}
+		})
+  </script>
+</body>
+</html>

@@ -1,5 +1,9 @@
 WVue.prototype.mount = function () {
-	this.render = this.creatRenderFn()
+	// 需要提供一个 render 方法: 生成 虚拟 DOM
+
+	// 带有缓存 ( Vue 本身是可以带有 render 成员 )
+	this.render = this.creatRenderFn()	
+	
 	this.mountCompontent()
 }
 
