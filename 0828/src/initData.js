@@ -3,7 +3,7 @@ let ARRAY_METHOD = [
   "pop",
   "shift",
   "unshift",
-  "slice",
+  "splice",
 ]
 
 let arr_method = Object.create(Array.prototype)
@@ -24,7 +24,7 @@ ARRAY_METHOD.forEach(method => {
 function defineReactive (object, key, value, enumerable) {
   let _that = this
 
-  if (typeof value === 'object' && value != null && !Array.isArray(value)) {
+  if (typeof value === 'object' && value != null) {
     observe(value)
   }
 
@@ -43,7 +43,7 @@ function defineReactive (object, key, value, enumerable) {
       console.log(`设置值为 ${newValue}`)
       value = newValue
 
-      _that.mountCompontent()
+      typeof _that.mountCompontent === 'function' && _that.mountCompontent()
     }
   })
 }
