@@ -1,100 +1,100 @@
-// 根据传入的 node 获取 虚拟DOM
+
+/** 由 HTML DOM -> VNode: 将这个函数当做 compiler 函数 */
 function getVNode(node) {
-	let _vnode = null
-	let nodeType = node.nodeType
+  let nodeType = node.nodeType;
+  let _vnode = null;
+  if (nodeType === 1) {
+    // 元素
+    let nodeName = node.nodeName;
+    let attrs = node.attributes;
+    let _attrObj = {};
+    for (let i = 0; i < attrs.length; i++) { // attrs[ i ] 属性节点 ( nodeType == 2 )
+      _attrObj[attrs[i].nodeName] = attrs[i].nodeValue;
+    }
+    _vnode = new VNode(nodeName, _attrObj, undefined, nodeType);
 
-	if (nodeType === 1) {
-		let nodeTag = node.nodeName
+    // 考虑 node 的子元素
+    let childNodes = node.childNodes;
+    for (let i = 0; i < childNodes.length; i++) {
+      _vnode.appendChild(getVNode(childNodes[i])); // 递归
+    }
 
-		let nodeData = {}
+  } else if (nodeType === 3) {
 
-		let nodeAttrs = node.attributes
-		for (let i = 0; i < nodeAttrs.length; i++) {
-			nodeData[nodeAttrs[i].nodeName] = nodeAttrs[i].nodeValue
-		}
+    _vnode = new VNode(undefined, undefined, node.nodeValue, nodeType);
+  }
 
-		_vnode = new VNode(nodeTag, nodeData, undefined, 1)
-
-		for (let i = 0; i < node.childNodes.length; i++) {
-			_vnode.appendChild(getVNode(node.childNodes[i]))
-		}
-	} else if (nodeType === 3) {
-		_vnode = new VNode(undefined, undefined, node.nodeValue, 3)
-	}
-
-	return _vnode
+  return _vnode;
 }
 
-// 根据传入的路径获取值    
-function getValueByPath(obj, paths) {
-	let pathsArr = paths.split(".")
-
-	let res = obj
-	let prop
-
-	while (prop = pathsArr.shift()) {
-		res = res[prop]
-	}
-
-	return res
-}
-
-// 解析模板 将 template 中的 {{}} 替换为 data 中的值
-let rKuohao = /\{\{(.*?)\}\}/g
-function compile(template, data) {
-	let _type = template.type;
-	let _data = template.data;
-	let _value = template.value;
-	let _tag = template.tag;
-	let _children = template.children;
-
-
-	let _vnode = null;
-
-	if (_type === 3) { // 文本节点 
-		// 对文本处理
-		_value = _value.replace(rKuohao, function (_, g) {
-			return getValueByPath(data, g.trim()); // 除了 get 读取器
-		});
-
-		_vnode = new VNode(_tag, _data, _value, _type)
-
-	} else if (_type === 1) { // 元素节点
-		_vnode = new VNode(_tag, _data, _value, _type);
-		_children.forEach(_subvnode => _vnode.appendChild(compile(_subvnode, data)));
-	}
-
-	return _vnode;
-}
-
-// 虚拟DOM转换为真实DOM
+/** 将虚拟 DOM 转换成真正的 DOM */
 function parseVNode(vnode) {
-	let type = vnode.type
-	let node = null
-	// debugger
-	if (type === 1) {
-		// 创建元素
-		node = document.createElement(vnode.tag)
+  // 创建 真实的 DOM
+  let type = vnode.type;
+  let _node = null;
+  if (type === 3) {
+    return document.createTextNode(vnode.value); // 创建文本节点
+  } else if (type === 1) {
 
-		// 添加元素属性
-		let data = vnode.data
-		Object.keys(data).forEach(key => {
-			attrName = key
-			attrValue = data[key]
+    _node = document.createElement(vnode.tag);
 
-			node.setAttribute(key, data[key])
-		})
+    // 属性
+    let data = vnode.data; // 现在这个 data 是键值对
+    Object.keys(data).forEach((key) => {
+      let attrName = key;
+      let attrValue = data[key];
+      _node.setAttribute(attrName, attrValue);
+    });
 
-		// 添加元素子元素
-		vnode.children.forEach(subvnode => {
-			node.appendChild(parseVNode(subvnode))
-		})
-	} else if (type === 3) {
-		node = document.createTextNode(vnode.value)
-	}
+    // 子元素
+    let children = vnode.children;
+    children.forEach(subvnode => {
+      _node.appendChild(parseVNode(subvnode)); // 递归转换子元素 ( 虚拟 DOM )
+    });
 
-	return node
+    return _node;
+  }
+
 }
 
 
+let rkuohao = /\{\{(.+?)\}\}/g;
+/** 根据路径 访问对象成员 */
+function getValueByPath(obj, path) {
+  let paths = path.split('.'); // [ xxx, yyy, zzz ]
+  let res = obj;
+  let prop;
+  while (prop = paths.shift()) {
+    res = res[prop];
+  }
+  return res;
+}
 
+
+/** 将 带有 坑的 Vnode 与数据 data 结合, 得到 填充数据的 VNode: 模拟 AST -> VNode */
+function combine(vnode, data) {
+  let _type = vnode.type;
+  let _data = vnode.data;
+  let _value = vnode.value;
+  let _tag = vnode.tag;
+  let _children = vnode.children;
+
+
+  let _vnode = null;
+
+  if (_type === 3) { // 文本节点 
+
+    // 对文本处理
+    _value = _value.replace(rkuohao, function (_, g) {
+      return getValueByPath(data, g.trim()); // 除了 get 读取器
+    });
+
+    _vnode = new VNode(_tag, _data, _value, _type)
+
+  } else if (_type === 1) { // 元素节点
+    _vnode = new VNode(_tag, _data, _value, _type);
+    _children.forEach(_subvnode => _vnode.appendChild(combine(_subvnode, data)));
+  }
+
+  return _vnode;
+}
